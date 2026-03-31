@@ -1,36 +1,60 @@
 {
-	"name": "llm-chat-app-template",
-	"description": "A simple chat application powered by Cloudflare Workers AI",
+	"name": "idea-to-launch-agent",
+	"description": "A Cloudflare-native AI app that turns rough ideas into reviewer-ready launch packs",
 	"cloudflare": {
-		"label": "LLM Chat App",
+		"label": "LaunchLens AI",
 		"products": [
 			"Workers",
 			"Workers AI",
-			"AI Gateway"
+			"Durable Objects",
+			"Workflows"
 		],
 		"categories": [
 			"ai"
 		],
-		"docs_url": "https://developers.cloudflare.com/workers-ai/",
+		"docs_url": "https://developers.cloudflare.com/agents/",
 		"preview_icon_url": "https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/a974bd55-20c6-4656-fa29-1551d43ddc00/public",
 		"preview_image_url": "https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/65dd8441-89d3-491d-c5a1-0a000d070700/preview",
 		"publish": true
 	},
 	"devDependencies": {
+		"@tailwindcss/postcss": "^4.1.5",
+		"@testing-library/react": "^16.3.0",
+		"@testing-library/user-event": "^14.6.1",
 		"@cloudflare/vitest-pool-workers": "0.10.11",
+		"@types/react": "^19.1.2",
+		"@types/react-dom": "^19.1.2",
+		"@vitejs/plugin-react": "^4.4.1",
 		"@cloudflare/workers-types": "^4.20250425.0",
 		"@types/node": "24.10.1",
+		"autoprefixer": "^10.4.21",
+		"concurrently": "^9.1.2",
+		"jsdom": "^26.1.0",
+		"postcss": "^8.5.3",
+		"tailwindcss": "^4.1.5",
 		"typescript": "5.9.3",
+		"vite": "^6.3.5",
 		"vitest": "3.2.4",
 		"wrangler": "4.56.0"
 	},
+	"dependencies": {
+		"clsx": "^2.1.1",
+		"lucide-react": "^0.511.0",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0",
+		"react-markdown": "^10.1.0",
+		"react-router-dom": "^7.6.1",
+		"remark-gfm": "^4.0.1"
+	},
 	"private": true,
 	"scripts": {
+		"build": "npm run build:client",
+		"build:client": "vite build",
 		"cf-typegen": "wrangler types",
-		"check": "tsc --noEmit && wrangler deploy --dry-run",
+		"check": "npm run build:client && tsc -p tsconfig.worker.json --noEmit && tsc -p tsconfig.app.json --noEmit && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
+		"dev": "npm run build:client && concurrently -k -n CLIENT,WORKER -c magenta,cyan \"vite build --watch\" \"wrangler dev\"",
+		"start": "npm run dev",
 		"test": "vitest"
 	}
 }

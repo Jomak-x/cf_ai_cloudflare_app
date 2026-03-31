@@ -1,10 +1,3 @@
-export interface Env {
-	AI: Ai;
-	ASSETS: Fetcher;
-	LAUNCH_SESSIONS: DurableObjectNamespace;
-	LAUNCH_BRIEF_WORKFLOW: Workflow<LaunchWorkflowParams>;
-}
-
 export interface ChatMessage {
 	role: "user" | "assistant";
 	content: string;
@@ -63,33 +56,44 @@ export interface ProjectState {
 	websitePrototype: WebsitePrototype | null;
 }
 
-export interface SnapshotExtraction {
-	ideaName: string;
-	oneLiner: string;
-	targetUser: string;
-	problem: string;
-	solution: string;
-	keyFeatures: string[];
-	mvpScope: string[];
-	risks: string[];
-	openQuestions: string[];
+export interface ApiErrorResponse {
+	error?: string;
 }
 
-export interface LaunchArtifacts {
-	launchBrief: LaunchBrief;
-	checklist: string[];
-	pitchDeck: PitchDeckSlide[];
-	forecast: ForecastPoint[];
-	websitePrototype: WebsitePrototype;
+export interface SpeechRecognitionResultLike {
+	readonly transcript: string;
 }
 
-export interface LaunchWorkflowParams {
-	sessionId: string;
-	workflowId: string;
-	sourceRevision: number;
-	projectState: ProjectState;
+export interface SpeechRecognitionResultListLike {
+	[index: number]: {
+		[index: number]: SpeechRecognitionResultLike;
+	};
 }
 
-export interface JsonModeResponse<T> {
-	response: T;
+export interface SpeechRecognitionEventLike extends Event {
+	results: SpeechRecognitionResultListLike;
+}
+
+export interface SpeechRecognitionLike {
+	lang: string;
+	continuous: boolean;
+	interimResults: boolean;
+	maxAlternatives: number;
+	onstart: (() => void) | null;
+	onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+	onerror: ((event: { error: string }) => void) | null;
+	onend: (() => void) | null;
+	start(): void;
+	stop(): void;
+}
+
+export interface SpeechRecognitionConstructor {
+	new (): SpeechRecognitionLike;
+}
+
+declare global {
+	interface Window {
+		SpeechRecognition?: SpeechRecognitionConstructor;
+		webkitSpeechRecognition?: SpeechRecognitionConstructor;
+	}
 }

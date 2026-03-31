@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+	--font-sans: "Avenir Next", "Gill Sans", ui-sans-serif, system-ui, sans-serif;
+	--font-serif: "Iowan Old Style", "Palatino Linotype", ui-serif, Georgia, serif;
+}
+
+@layer base {
+	html {
+		scroll-behavior: smooth;
+	}
+
+	body {
+		@apply min-h-screen bg-[#f5efe6] text-slate-900 antialiased;
+		background-image:
+			radial-gradient(circle at 8% 12%, rgba(249, 115, 22, 0.17), transparent 18%),
+			radial-gradient(circle at 92% 14%, rgba(16, 185, 129, 0.12), transparent 16%),
+			linear-gradient(180deg, #fff8f0, #f5efe6 48%, #ead8c4);
+	}
+
+	body::before {
+		content: "";
+		position: fixed;
+		inset: 0;
+		pointer-events: none;
+		background-image:
+			linear-gradient(rgba(15, 23, 42, 0.025) 1px, transparent 1px),
+			linear-gradient(90deg, rgba(15, 23, 42, 0.025) 1px, transparent 1px);
+		background-size: 34px 34px;
+		mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.24), transparent 84%);
+	}
+
+	#root {
+		@apply relative min-h-screen;
+	}
+}
+
+@utility glass-card {
+	@apply rounded-[30px] border border-white/50 bg-white/75 shadow-[0_24px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl;
+}
+
+@utility panel-card {
+	@apply rounded-[22px] border border-slate-200/70 bg-white/80 shadow-[0_12px_30px_rgba(15,23,42,0.05)];
+}
+
+@utility section-chip {
+	@apply inline-flex w-fit items-center rounded-full bg-orange-100 px-3 py-1 text-[0.76rem] font-semibold uppercase tracking-[0.18em] text-orange-700;
+}
+
+@layer components {
+	.primary-button {
+		@apply inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-5 py-3 font-medium text-white shadow-[0_12px_26px_rgba(249,115,22,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60;
+	}
+
+	.secondary-button {
+		@apply inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/80 px-5 py-3 font-medium text-slate-900 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60;
+	}
+}

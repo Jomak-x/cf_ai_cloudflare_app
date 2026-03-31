@@ -1,153 +1,174 @@
-# LLM Chat Application Template
+# LaunchLens AI
 
-A simple, ready-to-deploy chat application template powered by Cloudflare Workers AI. This template provides a clean starting point for building AI chat applications with streaming responses.
+LaunchLens AI is a Cloudflare-native application for pressure-testing an AI product idea and turning it into a reviewer-ready launch pack. The frontend is built with React, TypeScript, Tailwind CSS, and Vite, while the backend runs on a Cloudflare Worker with Workers AI, a Durable Object, and Workflows. A reviewer lands on a focused product page first, enters a dedicated workspace second, then types or speaks an idea, refines it over chat, builds a concept preview plus launch strategy, and refreshes to confirm the session state persists.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/llm-chat-app-template)
+This project was built for Cloudflare's AI-powered application assignment and is designed to be easy to understand and demo immediately.
 
-<!-- dash-content-start -->
+## Primary Use Case
 
-## Demo
+This app is meant for the moment when an idea is still fuzzy but you want something more concrete than notes:
 
-This template demonstrates how to build an AI-powered chat interface using Cloudflare Workers AI with streaming responses. It features:
+- a founder wants to pressure-test a product concept
+- a product person wants a fast prototype direction
+- a reviewer wants to see chat, memory, workflow orchestration, and generated output in one app
 
-- Real-time streaming of AI responses using Server-Sent Events (SSE)
-- Easy customization of models and system prompts
-- Support for AI Gateway integration
-- Clean, responsive UI that works on mobile and desktop
+Instead of stopping at conversation, the app turns the idea into a structured brief, a concept preview, and a 30-day launch pack.
 
-## Features
+## Assignment Fit
 
-- 💬 Simple and responsive chat interface
-- ⚡ Server-Sent Events (SSE) for streaming responses
-- 🧠 Powered by Cloudflare Workers AI LLMs
-- 🛠️ Built with TypeScript and Cloudflare Workers
-- 📱 Mobile-friendly design
-- 🔄 Maintains chat history on the client
-- 🔎 Built-in Observability logging
-<!-- dash-content-end -->
+This project satisfies each required component from the assignment:
 
-## Getting Started
+| Assignment requirement | How this project satisfies it |
+| --- | --- |
+| `LLM` | Uses `Llama 3.3` on `Workers AI` for the live product-strategy chat in `src/ai.ts`. |
+| `Workflow / coordination` | Uses a `Worker` for orchestration, a `Durable Object` for per-session coordination and persistence, and a `Workflow` for asynchronous launch-pack generation in `src/index.ts`. |
+| `User input via chat or voice` | Provides a React chat workspace with starter prompts, streaming responses, and browser-based voice input in `app/src/App.tsx`. |
+| `Memory or state` | Stores chat history, extracted product fields, workflow status, and generated artifacts in a persistent `Durable Object` session. |
+
+## What The App Does
+
+The app acts like an AI product strategist and launch copilot:
+
+- the user enters or speaks a rough startup or product idea
+- the assistant helps sharpen audience, problem, solution, MVP, and risks
+- the app derives and stores a structured "Launch Snapshot" after each chat turn
+- the user triggers a background workflow that assembles a launch brief, checklist, forecast, and a deterministic concept preview from the saved snapshot
+- the same session reloads after refresh because the state is stored server-side and the browser keeps the session id locally
+
+## Architecture
+
+### Frontend
+
+- React + TypeScript single-page frontend built with Vite
+- Tailwind CSS interface with a dedicated landing page and separate workspace route
+- Guided chat interface with starter prompts
+- Voice input using the browser's speech recognition API when available
+- Streaming assistant responses over SSE
+- Persistent browser session id in local storage
+- Live Launch Snapshot panel derived from the conversation
+- Workflow status and generated concept-preview display
+
+### Backend
+
+- `POST /api/chat`
+  - appends the user message to the session
+  - streams the AI response back to the browser
+  - persists the assistant response before the stream finishes
+  - returns the updated session state so the UI stays in sync without extra fetch loops
+- `GET /api/state`
+  - returns the persisted project state for the current session
+- `POST /api/generate-brief`
+  - validates that the session has user input
+  - starts a Cloudflare Workflow run against the saved snapshot
+  - produces a concept preview, launch brief, forecast, and checklist from the saved state
+- `POST /api/reset`
+  - clears the session so the reviewer can start over
+
+### Cloudflare services used
+
+- `Workers AI`
+- `Durable Objects`
+- `Workflows`
+- `Worker static assets`
+
+## Running Locally
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or newer)
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/)
-- A Cloudflare account with Workers AI access
+- Node.js `18+`
+- A Cloudflare account with `Workers AI` access
+- Wrangler CLI access through the project dependency
+- Cloudflare authentication configured locally, for example with:
 
-### Installation
+```bash
+npx wrangler login
+```
 
-1. Clone this repository:
+### Install
 
-   ```bash
-   git clone https://github.com/cloudflare/templates.git
-   cd templates/llm-chat-app
-   ```
+```bash
+npm install
+```
 
-2. Install dependencies:
+### Generate Worker Types
 
-   ```bash
-   npm install
-   ```
+```bash
+npm run cf-typegen
+```
 
-3. Generate Worker type definitions:
-   ```bash
-   npm run cf-typegen
-   ```
-
-### Development
-
-Start a local development server:
+### Start The App
 
 ```bash
 npm run dev
 ```
 
-This will start a local server at http://localhost:8787.
+The local app runs at `http://localhost:8787`.
 
-Note: Using Workers AI accesses your Cloudflare account even during local development, which will incur usage charges.
+## Quick Demo Flow
 
-### Deployment
+1. Open `http://localhost:8787`.
+2. Click `Open Workspace` or choose a starter prompt.
+3. Chat for a few turns until the `Launch Snapshot` fills in.
+4. Optionally use `Voice` to dictate a product idea or follow-up.
+5. Click `Build Launch Pack`.
+6. Wait for the workflow to finish and inspect the concept preview, launch brief, forecast, and checklist.
+7. Refresh the page to confirm that the session state persists.
+8. Click `New Session` to reset and return to the landing page.
 
-Deploy to Cloudflare Workers:
+## Verification
+
+These checks were run during implementation:
 
 ```bash
-npm run deploy
+npm test -- --run
+npm run check
 ```
 
-### Monitor
+What those checks cover:
 
-View real-time logs associated with any deployed Worker:
+- TypeScript compilation
+- Vite production build for the React + Tailwind frontend
+- Wrangler dry-run build
+- UI smoke tests for the main landing-page and workspace actions, including `Open Workspace`, sample-prompt handoff, chat send, launch-pack generation, `Back To Landing`, and `New Session`
+- State transition tests for message persistence, snapshot merging, workflow completion, stale workflow protection, and reset behavior
 
-```bash
-npm wrangler tail
-```
+## Reliability Notes
+
+- The chat path uses one LLM call for the streamed assistant response.
+- The live launch snapshot is derived locally from the saved conversation to avoid adding a second inference call after every message.
+- The streamed chat response now finalizes session state before the stream closes, which removes the extra post-chat sync loop from the frontend.
+- The workflow renders the launch pack deterministically from the saved session state, which avoids the timeout-prone "generate a whole site" pattern and keeps the demo fast.
+- Voice input uses the browser Web Speech API, so support depends on the browser.
+
+Note: in sandboxed environments Wrangler may print a warning about writing logs under `~/.wrangler`, but the build and dry-run can still complete successfully.
 
 ## Project Structure
 
+```text
+app/
+  index.html      Vite entry HTML
+  src/App.tsx     Landing page, workspace route, and client state flow
+  src/components/ Reusable markdown and forecast UI components
+  src/lib/types.ts Frontend API and state types
+  src/styles.css  Tailwind theme and utility layers
+src/
+  ai.ts           Workers AI chat prompts and deterministic concept-preview helpers
+  index.ts        Worker routes, Durable Object, and Workflow classes
+  state.ts        Pure state transition helpers
+  types.ts        Shared types
+test/
+  app.test.tsx    UI interaction smoke tests for buttons and core flows
+  state.test.ts   State transition verification
+  ai.test.ts      Launch-artifact generation coverage
+PROMPTS.md        AI prompts used during brainstorming and implementation
 ```
-/
-├── public/             # Static assets
-│   ├── index.html      # Chat UI HTML
-│   └── chat.js         # Chat UI frontend script
-├── src/
-│   ├── index.ts        # Main Worker entry point
-│   └── types.ts        # TypeScript type definitions
-├── test/               # Test files
-├── wrangler.jsonc      # Cloudflare Worker configuration
-├── tsconfig.json       # TypeScript configuration
-└── README.md           # This documentation
-```
 
-## How It Works
+## AI-Assisted Development
 
-### Backend
+AI-assisted coding was used for brainstorming, planning, and implementation support. The prompts used are documented in `PROMPTS.md`.
 
-The backend is built with Cloudflare Workers and uses the Workers AI platform to generate responses. The main components are:
+## Submission Notes
 
-1. **API Endpoint** (`/api/chat`): Accepts POST requests with chat messages and streams responses
-2. **Streaming**: Uses Server-Sent Events (SSE) for real-time streaming of AI responses
-3. **Workers AI Binding**: Connects to Cloudflare's AI service via the Workers AI binding
-
-### Frontend
-
-The frontend is a simple HTML/CSS/JavaScript application that:
-
-1. Presents a chat interface
-2. Sends user messages to the API
-3. Processes streaming responses in real-time
-4. Maintains chat history on the client side
-
-## Customization
-
-### Changing the Model
-
-To use a different AI model, update the `MODEL_ID` constant in `src/index.ts`. You can find available models in the [Cloudflare Workers AI documentation](https://developers.cloudflare.com/workers-ai/models/).
-
-### Using AI Gateway
-
-The template includes commented code for AI Gateway integration, which provides additional capabilities like rate limiting, caching, and analytics.
-
-To enable AI Gateway:
-
-1. [Create an AI Gateway](https://dash.cloudflare.com/?to=/:account/ai/ai-gateway) in your Cloudflare dashboard
-2. Uncomment the gateway configuration in `src/index.ts`
-3. Replace `YOUR_GATEWAY_ID` with your actual AI Gateway ID
-4. Configure other gateway options as needed:
-   - `skipCache`: Set to `true` to bypass gateway caching
-   - `cacheTtl`: Set the cache time-to-live in seconds
-
-Learn more about [AI Gateway](https://developers.cloudflare.com/ai-gateway/).
-
-### Modifying the System Prompt
-
-The default system prompt can be changed by updating the `SYSTEM_PROMPT` constant in `src/index.ts`.
-
-### Styling
-
-The UI styling is contained in the `<style>` section of `public/index.html`. You can modify the CSS variables at the top to quickly change the color scheme.
-
-## Resources
-
-- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Cloudflare Workers AI Documentation](https://developers.cloudflare.com/workers-ai/)
-- [Workers AI Models](https://developers.cloudflare.com/workers-ai/models/)
+- Cloudflare's assignment asks for the repository name to start with `cf_ai_`. For submission, this repo should be published with a name such as `cf_ai_idea_to_launch_agent`.
+- This repository includes a `README.md` with running instructions and architecture notes, and a `PROMPTS.md` file documenting AI assistance.
+- The final application logic in this repo is original work built on top of a generic Cloudflare starter template.
